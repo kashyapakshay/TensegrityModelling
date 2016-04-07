@@ -81,12 +81,6 @@ void simLoop (int pause)
 
     // --- Forces ---
 
-    //if(count < 10)
-        //dBodyAddRelTorque(capsule.body, 0.00001, 0, 0);
-
-    //if(count < 10)
-        //dBodyAddRelTorque(capsule2.body, -0.00001, 0, 0);
-
     // ----- DRAW -----
 
     // Capsule 1 - Blue
