@@ -18,20 +18,22 @@ struct Strut {
 
     dMass massObj;
 
-    dReal radius, mass, length;
+    dReal mass, length, radius;
     dReal x, y, z;
     dMatrix3 rot;
 
     dReal *color;
 };
 
-const float gravity = 0;
 
 // WORLD
 dWorldID world;
 dSpaceID space;
 dGeomID  ground;
 dJointGroupID contactgroup;
+
+const float gravity = 0;
+
 int count = 0;
 float origin[] = {0, 0, 0};
 
@@ -101,8 +103,44 @@ void drawStrut(Strut strut) {
         dBodyGetRotation(strut.body), strut.length, strut.radius);
 }
 
-void createStrut() {
-    
+Strut createStrut(dSpaceID space, dWorldID world, dVector3 coords, dVector3 angles, dReal mass, dReal length, dReal radius, dVector3 color) {
+    Strut strut;
+
+    // Create: Body
+    strut.body = dBodyCreate(world);
+
+    // Set: (x, y, z); Angle
+    strut.x = coords[0];
+    strut.y = coords[1];
+    strut.z = coords[2];
+
+    dRFromEulerAngles(strut.rot, angles[0], angles[1], angles[2]);
+
+    // Set: Mass
+    strut.mass = mass;
+
+    // Set: Radius; Length
+    strut.length = length;
+    strut.radius = radius;
+
+    // Create: Geom
+    strut.geom = dCreateCapsule(space, strut.radius, strut.length);
+
+    // Set: color
+    strut.color = color;
+
+    // Calculate and Initalize Mass object
+    dMassSetZero(&(strut.massObj));
+    dMassSetCapsule(&(strut.massObj), DENSITY, 3, strut.radius, strut.length);
+    dBodySetMass(strut.body, &(strut.massObj));
+
+    // Set Configuration
+    dBodySetPosition(strut.body, strut.x, strut.y, strut.z);
+    dBodySetRotation(strut.body, strut.rot);
+
+    dGeomSetBody(strut.geom, strut.body);
+
+    return strut;
 }
 
 // Simulation loop
@@ -116,8 +154,7 @@ void simLoop (int pause) {
     dBodySetForce(capsule.body, 0, 0, 0);
     dBodySetForce(capsule2.body, 0, 0, 0);
 
-    // ----- FORCES -----
-
+    // ----- EDGES -----
     dVector3 capsule_one_top, capsule_one_bottom;
     dVector3 capsule_two_top, capsule_two_bottom;
     dVector3 capsule_three_top, capsule_three_bottom;
@@ -131,27 +168,18 @@ void simLoop (int pause) {
     dBodyGetRelPointPos(capsule3.body, 0, 0, capsule3.length/2, capsule_three_top);
     dBodyGetRelPointPos(capsule3.body, 0, 0, -capsule3.length/2, capsule_three_bottom);
 
-    // 1t - 2t
+    // ----- APPLY EDGE FORCES (SIMULATE SPRINGS) -----
     addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
-    // 1t - 3t
     addForce(capsule, capsule3, capsule_one_top, capsule_three_top, 1, 1);
-    // 1t - 3b
     addForce(capsule, capsule3, capsule_one_top, capsule_three_bottom, 1, -1);
-    // 1b - 2t
     addForce(capsule, capsule2, capsule_one_bottom, capsule_two_top, -1, 1);
-    // 1b - 2b
     addForce(capsule, capsule2, capsule_one_bottom, capsule_two_bottom, -1, -1);
-    // 1b - 3b
     addForce(capsule, capsule3, capsule_one_bottom, capsule_three_bottom, -1, -1);
-    // 2t - 3t
     addForce(capsule2, capsule3, capsule_two_top, capsule_three_top, 1, 1);
-    // 2b - 3b
     addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_bottom, -1, -1);
-    // 2b - 3t
     addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_top, -1, 1);
 
     // ----- DRAW -----
-
     // Springs
     dsDrawLine(capsule_one_top, capsule_two_top);
     dsDrawLine(capsule_one_top, capsule_three_top);
@@ -180,7 +208,6 @@ void start() {
 
 // main function
 int main (int argc, char **argv) {
-
     // for drawstuff
     dsFunctions fn; // drawstuff structure
     fn.version = DS_VERSION;    // the version of the drawstuff
@@ -193,129 +220,34 @@ int main (int argc, char **argv) {
     dInitODE(); // Initialize ODE
     world = dWorldCreate(); // Create a dynamic world
 
-    dWorldSetGravity (world,0,0,-0.2);
+    dWorldSetGravity (world, 0, 0, -0.2);
     dWorldSetDamping (world, 0.05, 0.05);
 
     space = dHashSpaceCreate(0);
     ground = dCreatePlane(space, 0, 0, 1, 0);
     contactgroup = dJointGroupCreate(0);
 
+    // ----- CREATE STRUTS -----
+    // Global Strut Props
+    dReal mass = 0.1, length = 1.0, radius = 0.02;
+
     // --- Capsule 1: Blue ---
-
-    // Create: Body
-    capsule.body = dBodyCreate(world);
-
-    // Set: (x, y, z); Angle
-    capsule.x = 0;
-    capsule.y = 0;
-    capsule.z = 1;
-    //dQFromAxisAndAngle(q, 1, 0, 0, PI/4);
-    //dQtoR(q, capsule.rot);
-    dRFromEulerAngles(capsule.rot, 0, 0, 0);
-
-    // Set: Radius; Length
-    capsule.radius = 0.02;
-    capsule.length = 1;
-
-    // Create: Geom
-    capsule.geom = dCreateCapsule(space, capsule.radius, capsule.length);
-
-    // Set: Mass
-    capsule.mass = 0.1;
-
-    // Set: color
-    dReal color[3] = {0.0, 0.0, 1.0};
-    capsule.color = color;
-
-    // Calculate and Initalize Mass object
-    dMassSetZero(&(capsule.massObj));
-    dMassSetCapsule(&(capsule.massObj), DENSITY, 3, capsule.radius,
-        capsule.length);
-    dBodySetMass(capsule.body, &(capsule.massObj));
-
-    // Set Configuration
-    dBodySetPosition(capsule.body, capsule.x, capsule.y, capsule.z);
-    dBodySetRotation(capsule.body, capsule.rot);
-
-    dGeomSetBody(capsule.geom, capsule.body);
+    dVector3 coords1 = {0.0, 0.0, 1.0};
+    dVector3 angles1 = {0.0, 0.0, 0.0};
+    dVector3 color1 = {0.0, 0.0, 1.0};
+    capsule = createStrut(space, world, coords1, angles1, mass, length, radius, color1);
 
     // --- Capsule 2: Green ---
-
-    // Create: Body
-    capsule2.body = dBodyCreate(world);
-
-    // Set: (x, y, z); Angle
-    capsule2.x = 0;
-    capsule2.y = 0.5;
-    capsule2.z = 1;
-    //dQFromAxisAndAngle(q, 1, 0, 0, PI/4);
-    //dQtoR(q, capsule.rot);
-    dRFromEulerAngles(capsule2.rot, 0, 0, 0);
-
-    // Set: Radius; Length
-    capsule2.radius = 0.02;
-    capsule2.length = 1;
-
-    // Create: Geom
-    capsule2.geom = dCreateCapsule(space, capsule.radius, capsule.length);
-
-    // Set: Mass
-    capsule2.mass = 0.1;
-
-    // Set: color
-    dReal color2[3] = {0.0, 1.0, 0.0};
-    capsule2.color = color2;
-
-    // Calculate and Initalize Mass object
-    dMassSetZero(&(capsule2.massObj));
-    dMassSetCapsule(&(capsule2.massObj), DENSITY, 3, capsule2.radius,
-        capsule2.length);
-    dBodySetMass(capsule2.body, &(capsule2.massObj));
-
-    // Set Configuration
-    dBodySetPosition(capsule2.body, capsule2.x, capsule2.y, capsule2.z);
-    dBodySetRotation(capsule2.body, capsule2.rot);
-
-    dGeomSetBody(capsule2.geom, capsule2.body);
+    dVector3 coords2 = {0.0, 0.5, 1.0};
+    dVector3 angles2 = {0.0, 0.0, 0.0};
+    dVector3 color2 = {0.0, 1.0, 0.0};
+    capsule2 = createStrut(space, world, coords2, angles2, mass, length, radius, color2);
 
     // --- Capsule 3: Red ---
-
-    // Create: Body
-    capsule3.body = dBodyCreate(world);
-
-    // Set: (x, y, z); Angle
-    capsule3.x = 0.6;
-    capsule3.y = 0.1;
-    capsule3.z = 1;
-    //dQFromAxisAndAngle(q, 1, 0, 0, PI/4);
-    //dQtoR(q, capsule.rot);
-    dRFromEulerAngles(capsule2.rot, PI/4, 0, 0);
-
-    // Set: Radius; Length
-    capsule3.radius = 0.02;
-    capsule3.length = 1;
-
-    // Create: Geom
-    capsule3.geom = dCreateCapsule(space, capsule3.radius, capsule3.length);
-
-    // Set: Mass
-    capsule3.mass = 0.1;
-
-    // Set: color
-    dReal color3[3] = {1.0, 0.0, 0.0};
-    capsule3.color = color3;
-
-    // Calculate and Initalize Mass object
-    dMassSetZero(&(capsule3.massObj));
-    dMassSetCapsule(&(capsule3.massObj), DENSITY, 3, capsule3.radius,
-        capsule3.length);
-    dBodySetMass(capsule3.body, &(capsule3.massObj));
-
-    // Set Configuration
-    dBodySetPosition(capsule3.body, capsule3.x, capsule3.y, capsule3.z);
-    dBodySetRotation(capsule3.body, capsule3.rot);
-
-    dGeomSetBody(capsule3.geom, capsule3.body);
+    dVector3 coords3 = {0.6, 0.1, 1.0};
+    dVector3 angles3 = {0.0, 0.0, 0.0};
+    dVector3 color3 = {1.0, 0.0, 0.0};
+    capsule3 = createStrut(space, world, coords3, angles3, mass, length, radius, color3);
 
     // ----------------------------------------
 
