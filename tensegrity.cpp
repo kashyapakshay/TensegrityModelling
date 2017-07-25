@@ -93,9 +93,17 @@ void addForce(Strut c1, Strut c2, dVector3 cp1, dVector3 cp2, int d1, int d2) {
         0, 0, d2 * c2.length/2);
 }
 
-// void drawStrut(Strut strut) {
-//
-// }
+void drawStrut(Strut strut) {
+    dReal *color = strut.color;
+    dsSetColor(color[0], color[1], color[2]);
+
+    dsDrawCapsule(dBodyGetPosition(strut.body),
+        dBodyGetRotation(strut.body), strut.length, strut.radius);
+}
+
+void createStrut() {
+    
+}
 
 // Simulation loop
 void simLoop (int pause) {
@@ -124,74 +132,45 @@ void simLoop (int pause) {
     dBodyGetRelPointPos(capsule3.body, 0, 0, -capsule3.length/2, capsule_three_bottom);
 
     // 1t - 2t
-    dsDrawLine(capsule_one_top, capsule_two_top);
     addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
-
     // 1t - 3t
-    dsDrawLine(capsule_one_top, capsule_three_top);
     addForce(capsule, capsule3, capsule_one_top, capsule_three_top, 1, 1);
-
     // 1t - 3b
-    dsDrawLine(capsule_one_top, capsule_three_bottom);
     addForce(capsule, capsule3, capsule_one_top, capsule_three_bottom, 1, -1);
-
     // 1b - 2t
-    dsDrawLine(capsule_one_bottom, capsule_two_top);
     addForce(capsule, capsule2, capsule_one_bottom, capsule_two_top, -1, 1);
-
     // 1b - 2b
-    dsDrawLine(capsule_one_bottom, capsule_two_bottom);
     addForce(capsule, capsule2, capsule_one_bottom, capsule_two_bottom, -1, -1);
-
     // 1b - 3b
-    dsDrawLine(capsule_one_bottom, capsule_three_bottom);
     addForce(capsule, capsule3, capsule_one_bottom, capsule_three_bottom, -1, -1);
-
     // 2t - 3t
-    dsDrawLine(capsule_two_top, capsule_three_top);
     addForce(capsule2, capsule3, capsule_two_top, capsule_three_top, 1, 1);
-
     // 2b - 3b
-    dsDrawLine(capsule_two_bottom, capsule_three_bottom);
     addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_bottom, -1, -1);
-
     // 2b - 3t
-    dsDrawLine(capsule_two_bottom, capsule_three_top);
     addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_top, -1, 1);
 
     // ----- DRAW -----
 
-    // Capsule 1 - Blue
+    // Springs
+    dsDrawLine(capsule_one_top, capsule_two_top);
+    dsDrawLine(capsule_one_top, capsule_three_top);
+    dsDrawLine(capsule_one_top, capsule_three_bottom);
+    dsDrawLine(capsule_one_bottom, capsule_two_top);
+    dsDrawLine(capsule_one_bottom, capsule_two_bottom);
+    dsDrawLine(capsule_one_bottom, capsule_three_bottom);
+    dsDrawLine(capsule_two_top, capsule_three_top);
+    dsDrawLine(capsule_two_bottom, capsule_three_bottom);
+    dsDrawLine(capsule_two_bottom, capsule_three_top);
 
-    // Set color (red, green, blue) value is from 0 to 1.0
-    dReal *color = capsule.color;
-    dsSetColor(color[0], color[1], color[2]);
-
-    dsDrawCapsule(dBodyGetPosition(capsule.body),
-        dBodyGetRotation(capsule.body), capsule.length, capsule.radius);
-
-    // Capsule 2 - Green
-
-    // Set color (red, green, blue) value is from 0 to 1.0
-    dReal *color2 = capsule2.color;
-    dsSetColor(color2[0], color2[1], color2[2]);
-
-    dsDrawCapsule(dBodyGetPosition(capsule2.body),
-        dBodyGetRotation(capsule2.body), capsule2.length, capsule2.radius);
-
-    // Capsule 3 - Red
-
-    // Set color (red, green, blue) value is from 0 to 1.0
-    dReal *color3 = capsule3.color;
-    dsSetColor(color3[0], color3[1], color3[2]);
-
-    dsDrawCapsule(dBodyGetPosition(capsule3.body),
-        dBodyGetRotation(capsule3.body), capsule3.length, capsule3.radius);
+    // Struts (Capsule 1 - Blue; 2 - Green; 3 - Red)
+    drawStrut(capsule);
+    drawStrut(capsule2);
+    drawStrut(capsule3);
 }
 
 // Start function void start()
-void start()
-{
+void start() {
     // Set a camera
     static float xyz[3] = {2, 0, 1};     // View position (x, y, z [m])
     static float hpr[3] = {180, 0, 0};    // View direction head, pitch, roll[]
