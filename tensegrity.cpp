@@ -6,6 +6,7 @@
 #ifdef dDOUBLE
 #define dsDrawSphere dsDrawSphereD
 #define dsDrawCapsule dsDrawCapsuleD
+#define dsDrawLine dsDrawLineD
 #endif
 
 #define DENSITY (0.5)
@@ -43,7 +44,7 @@ float getVector(float vect[3], float vect2[3]) {
     return *vector;
 }
 
-float getDist(float vect[3], float vect2[3]) {
+float getDist(dReal vect[3], dReal vect2[3]) {
     float dist = sqrt(pow(vect[0] - vect2[0], 2) +
                     pow(vect[1] - vect2[1], 2) +
                     pow(vect[2] - vect2[2], 2));
@@ -68,6 +69,33 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
         dJointAttach (c,b1,b2);
     }
 }
+
+void addForce(Strut c1, Strut c2, dVector3 cp1, dVector3 cp2, int d1, int d2) {
+    float pdist, vdist[3];
+    float force;
+
+    pdist = getDist(cp1, cp2);
+    force = getForce(0.2, pdist, 0.001);
+    vdist[0] = (cp2[0] - cp1[0]);
+    vdist[1] = (cp2[1] - cp1[1]);
+    vdist[2] = (cp2[2] - cp1[2]);
+
+    dBodyAddForceAtRelPos(c1.body,
+        vdist[0] * force / pdist,
+        vdist[1] * force / pdist,
+        vdist[2] * force / pdist,
+        0, 0, d1 * c1.length/2);
+
+    dBodyAddForceAtRelPos(c2.body,
+        -vdist[0] * force / pdist,
+        -vdist[1] * force / pdist,
+        -vdist[2] * force / pdist,
+        0, 0, d2 * c2.length/2);
+}
+
+// void drawStrut(Strut strut) {
+//
+// }
 
 // Simulation loop
 void simLoop (int pause) {
@@ -95,198 +123,41 @@ void simLoop (int pause) {
     dBodyGetRelPointPos(capsule3.body, 0, 0, capsule3.length/2, capsule_three_top);
     dBodyGetRelPointPos(capsule3.body, 0, 0, -capsule3.length/2, capsule_three_bottom);
 
-    float pdist, vdist[3];
-    float force;
-
     // 1t - 2t
     dsDrawLine(capsule_one_top, capsule_two_top);
-
-    pdist = getDist(capsule_one_top, capsule_two_top);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_two_top[0] - capsule_one_top[0]);
-    vdist[1] = (capsule_two_top[1] - capsule_one_top[1]);
-    vdist[2] = (capsule_two_top[2] - capsule_one_top[2]);
-
-    dBodyAddForceAtRelPos(capsule.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, capsule.length/2);
-
-    dBodyAddForceAtRelPos(capsule2.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, capsule2.length/2);
+    addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
 
     // 1t - 3t
     dsDrawLine(capsule_one_top, capsule_three_top);
-
-    pdist = getDist(capsule_one_top, capsule_three_top);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_three_top[0] - capsule_one_top[0]);
-    vdist[1] = (capsule_three_top[1] - capsule_one_top[1]);
-    vdist[2] = (capsule_three_top[2] - capsule_one_top[2]);
-
-    dBodyAddForceAtRelPos(capsule.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, capsule.length/2);
-
-    dBodyAddForceAtRelPos(capsule3.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, capsule3.length/2);
+    addForce(capsule, capsule3, capsule_one_top, capsule_three_top, 1, 1);
 
     // 1t - 3b
     dsDrawLine(capsule_one_top, capsule_three_bottom);
-
-    pdist = getDist(capsule_one_top, capsule_three_bottom);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_three_bottom[0] - capsule_one_top[0]);
-    vdist[1] = (capsule_three_bottom[1] - capsule_one_top[1]);
-    vdist[2] = (capsule_three_bottom[2] - capsule_one_top[2]);
-
-    dBodyAddForceAtRelPos(capsule.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, capsule.length/2);
-
-    dBodyAddForceAtRelPos(capsule3.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, -capsule3.length/2);
+    addForce(capsule, capsule3, capsule_one_top, capsule_three_bottom, 1, -1);
 
     // 1b - 2t
     dsDrawLine(capsule_one_bottom, capsule_two_top);
-
-    pdist = getDist(capsule_one_bottom, capsule_two_top);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_two_top[0] - capsule_one_bottom[0]);
-    vdist[1] = (capsule_two_top[1] - capsule_one_bottom[1]);
-    vdist[2] = (capsule_two_top[2] - capsule_one_bottom[2]);
-
-    dBodyAddForceAtRelPos(capsule.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, -capsule.length/2);
-
-    dBodyAddForceAtRelPos(capsule2.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, capsule2.length/2);
+    addForce(capsule, capsule2, capsule_one_bottom, capsule_two_top, -1, 1);
 
     // 1b - 2b
     dsDrawLine(capsule_one_bottom, capsule_two_bottom);
-
-    pdist = getDist(capsule_one_bottom, capsule_two_bottom);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_two_bottom[0] - capsule_one_bottom[0]);
-    vdist[1] = (capsule_two_bottom[1] - capsule_one_bottom[1]);
-    vdist[2] = (capsule_two_bottom[2] - capsule_one_bottom[2]);
-
-    dBodyAddForceAtRelPos(capsule.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, -capsule.length/2);
-
-    dBodyAddForceAtRelPos(capsule2.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, -capsule2.length/2);
+    addForce(capsule, capsule2, capsule_one_bottom, capsule_two_bottom, -1, -1);
 
     // 1b - 3b
     dsDrawLine(capsule_one_bottom, capsule_three_bottom);
-
-    pdist = getDist(capsule_one_bottom, capsule_three_bottom);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_three_bottom[0] - capsule_one_bottom[0]);
-    vdist[1] = (capsule_three_bottom[1] - capsule_one_bottom[1]);
-    vdist[2] = (capsule_three_bottom[2] - capsule_one_bottom[2]);
-
-    dBodyAddForceAtRelPos(capsule.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, -capsule.length/2);
-
-    dBodyAddForceAtRelPos(capsule3.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, -capsule3.length/2);
+    addForce(capsule, capsule3, capsule_one_bottom, capsule_three_bottom, -1, -1);
 
     // 2t - 3t
     dsDrawLine(capsule_two_top, capsule_three_top);
-
-    pdist = getDist(capsule_two_top, capsule_three_top);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_three_top[0] - capsule_two_top[0]);
-    vdist[1] = (capsule_three_top[1] - capsule_two_top[1]);
-    vdist[2] = (capsule_three_top[2] - capsule_two_top[2]);
-
-    dBodyAddForceAtRelPos(capsule2.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, capsule2.length/2);
-
-    dBodyAddForceAtRelPos(capsule3.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, capsule3.length/2);
+    addForce(capsule2, capsule3, capsule_two_top, capsule_three_top, 1, 1);
 
     // 2b - 3b
     dsDrawLine(capsule_two_bottom, capsule_three_bottom);
-
-    pdist = getDist(capsule_two_bottom, capsule_three_bottom);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_three_bottom[0] - capsule_two_bottom[0]);
-    vdist[1] = (capsule_three_bottom[1] - capsule_two_bottom[1]);
-    vdist[2] = (capsule_three_bottom[2] - capsule_two_bottom[2]);
-
-    dBodyAddForceAtRelPos(capsule2.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, -capsule2.length/2);
-
-    dBodyAddForceAtRelPos(capsule3.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, -capsule3.length/2);
+    addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_bottom, -1, -1);
 
     // 2b - 3t
     dsDrawLine(capsule_two_bottom, capsule_three_top);
-
-    pdist = getDist(capsule_two_bottom, capsule_three_top);
-    force = getForce(0.2, pdist, 0.001);
-    vdist[0] = (capsule_three_top[0] - capsule_two_bottom[0]);
-    vdist[1] = (capsule_three_top[1] - capsule_two_bottom[1]);
-    vdist[2] = (capsule_three_top[2] - capsule_two_bottom[2]);
-
-    dBodyAddForceAtRelPos(capsule2.body,
-        vdist[0] * force / pdist,
-        vdist[1] * force / pdist,
-        vdist[2] * force / pdist,
-        0, 0, -capsule2.length/2);
-
-    dBodyAddForceAtRelPos(capsule3.body,
-        -vdist[0] * force / pdist,
-        -vdist[1] * force / pdist,
-        -vdist[2] * force / pdist,
-        0, 0, capsule3.length/2);
-
+    addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_top, -1, 1);
 
     // ----- DRAW -----
 
@@ -298,7 +169,6 @@ void simLoop (int pause) {
 
     dsDrawCapsule(dBodyGetPosition(capsule.body),
         dBodyGetRotation(capsule.body), capsule.length, capsule.radius);
-
 
     // Capsule 2 - Green
 
@@ -339,7 +209,7 @@ int main (int argc, char **argv) {
     fn.step = &simLoop;               // step function
     fn.command = NULL;     // no command function for keyboard
     fn.stop    = NULL;         // no stop function
-    fn.path_to_textures = "/home/kashyapa/Dev/install/ode/drawstuff/textures"; //path to the texture
+    fn.path_to_textures = "/usr/local/include/drawstuff/textures"; //path to the texture
 
     dInitODE(); // Initialize ODE
     world = dWorldCreate(); // Create a dynamic world
