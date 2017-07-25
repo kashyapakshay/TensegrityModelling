@@ -16,6 +16,8 @@ See here:
 g++ tensegrity.cpp -o tensegrity -lode -ldrawstuff -lX11 -lGLU -lGL -lpthread
 ```
 
+Download **tensegrity** and run **./tensegrity** to run the compiled demo.
+
 ### ODE Tutorials
 
 Some good ODE tutorials:
