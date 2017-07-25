@@ -1,6 +1,6 @@
 # Tensegrity Modelling
 
-## Installing ODE
+### Installing ODE
 
 See here:
 
@@ -10,7 +10,8 @@ See here:
 
 2. [https://www.ode-wiki.org/wiki/index.php?title=Manual:_Install_and_Use](https://www.ode-wiki.org/wiki/index.php?title=Manual:_Install_and_Use)
 
-To compile tensegrity.cpp:
+### Compiling
+
 ```shell
 g++ tensegrity.cpp -o tensegrity -lode -ldrawstuff -lX11 -lGLU -lGL -lpthread
 ```
