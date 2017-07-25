@@ -1,3 +1,9 @@
+/*
+tensegrity.cpp: 3-Strut Tensegrity Simulation.
+
+*** I used your favorite C/C++ braces style, John! ***
+*/
+
 #include "ode/ode.h"
 #include "drawstuff/drawstuff.h"
 #include <math.h>
