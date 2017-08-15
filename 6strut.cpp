@@ -16,7 +16,7 @@ tensegrity.cpp: 3-Strut Tensegrity Simulation.
 #endif
 
 #define DENSITY (0.5)
-#define FORCE_K (0.005)
+#define FORCE_K (1.0)
 #define PI (3.14159265)
 
 struct Strut {
@@ -64,7 +64,7 @@ float getDist(dReal vect[3], dReal vect2[3]) {
 float getHorizontal(float l, float theta) { return l * cos(theta); }
 float getVertical(float l, float theta)   { return l * sin(theta); }
 
-float getForce(float r, float x, float k) { return k * (x - r); }
+float getSpringForce(float r, float x, float k) { return k * (x - r); }
 
 static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
     dBodyID b1 = dGeomGetBody(o1);
@@ -84,7 +84,7 @@ void addForce(Strut c1, Strut c2, dVector3 cp1, dVector3 cp2, int d1, int d2) {
     float force;
 
     pdist = getDist(cp1, cp2);
-    force = getForce(0.2, pdist, 0.001);
+    force = getSpringForce(0.2, pdist, 0.001);
     vdist[0] = (cp2[0] - cp1[0]);
     vdist[1] = (cp2[1] - cp1[1]);
     vdist[2] = (cp2[2] - cp1[2]);
@@ -167,55 +167,55 @@ void simLoop (int pause) {
     dBodySetForce(capsule5.body, 0, 0, 0);
     dBodySetForce(capsule6.body, 0, 0, 0);
 
-    dBodySetTorque(capsule.body, 0, 0, 0);
-    dBodySetTorque(capsule2.body, 0, 0, 0);
-    dBodySetTorque(capsule3.body, 0, 0, 0);
-    dBodySetTorque(capsule4.body, 0, 0, 0);
-    dBodySetTorque(capsule5.body, 0, 0, 0);
-    dBodySetTorque(capsule6.body, 0, 0, 0);
+    // dBodySetTorque(capsule.body, 0, 0, 0);
+    // dBodySetTorque(capsule2.body, 0, 0, 0);
+    // dBodySetTorque(capsule3.body, 0, 0, 0);
+    // dBodySetTorque(capsule4.body, 0, 0, 0);
+    // dBodySetTorque(capsule5.body, 0, 0, 0);
+    // dBodySetTorque(capsule6.body, 0, 0, 0);
 
     // dBodyAddTorque(capsule.body, 0, 0, 0.00002);
     // dBodyAddTorque(capsule2.body, 0, 0, 0.00002);
     // dBodyAddTorque(capsule3.body, 0, 0, 0.00001);
 
-    // if (flag == 0) {
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         0.0005, 0, 0,
-    //         0, 0, capsule.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, -capsule.length/2);
-    //
-    //
-    //     dBodyAddForceAtRelPos(capsule2.body,
-    //         0.0005, 0, 0,
-    //         0, 0, capsule2.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule2.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, -capsule2.length/2);
-    //
-    //     flag = 1;
-    // } else {
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, capsule.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         0.0005, 0, 0,
-    //         0, 0, -capsule.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule2.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, capsule2.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule2.body,
-    //         0.0005, 0, 0,
-    //         0, 0, -capsule2.length/2);
-    //
-    //     flag = 0;
-    // }
+    // Simulate motor vibration
+    if (flag == 0) {
+        dBodyAddForceAtRelPos(capsule.body,
+            0.0005, 0, 0,
+            0, 0, capsule.length/2);
+
+        dBodyAddForceAtRelPos(capsule.body,
+            -0.0005, 0, 0,
+            0, 0, -capsule.length/2);
+
+        dBodyAddForceAtRelPos(capsule4.body,
+            0.0005, 0, 0,
+            0, 0, capsule4.length/2);
+
+        dBodyAddForceAtRelPos(capsule4.body,
+            -0.0005, 0, 0,
+            0, 0, -capsule4.length/2);
+
+        flag = 1;
+    } else {
+        dBodyAddForceAtRelPos(capsule.body,
+            -0.0005, 0, 0,
+            0, 0, capsule.length/2);
+
+        dBodyAddForceAtRelPos(capsule.body,
+            0.0005, 0, 0,
+            0, 0, -capsule.length/2);
+
+        dBodyAddForceAtRelPos(capsule4.body,
+            -0.0005, 0, 0,
+            0, 0, capsule4.length/2);
+
+        dBodyAddForceAtRelPos(capsule4.body,
+            0.0005, 0, 0,
+            0, 0, -capsule4.length/2);
+
+        flag = 0;
+    }
 
     // ----- EDGES -----
     dVector3 capsule_one_top, capsule_one_bottom;
@@ -243,17 +243,37 @@ void simLoop (int pause) {
     dBodyGetRelPointPos(capsule6.body, 0, 0, capsule6.length/2, capsule_six_top);
     dBodyGetRelPointPos(capsule6.body, 0, 0, -capsule6.length/2, capsule_six_bottom);
 
-    // // ----- APPLY EDGE FORCES (SIMULATE SPRINGS) -----
-    // addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
-    // addForce(capsule, capsule3, capsule_one_top, capsule_three_top, 1, 1);
-    // addForce(capsule, capsule3, capsule_one_top, capsule_three_bottom, 1, -1);
-    // addForce(capsule, capsule2, capsule_one_bottom, capsule_two_top, -1, 1);
-    // addForce(capsule, capsule2, capsule_one_bottom, capsule_two_bottom, -1, -1);
-    // addForce(capsule, capsule3, capsule_one_bottom, capsule_three_bottom, -1, -1);
-    // addForce(capsule2, capsule3, capsule_two_top, capsule_three_top, 1, 1);
-    // addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_bottom, -1, -1);
-    // addForce(capsule2, capsule3, capsule_two_bottom, capsule_three_top, -1, 1);
-    //
+    // ----- APPLY EDGE FORCES (SIMULATE SPRINGS) -----
+    addForce(capsule, capsule3, capsule_one_top, capsule_three_top, 1, 1);
+    addForce(capsule2, capsule3, capsule_two_top, capsule_three_top, 1, 1);
+    addForce(capsule, capsule3, capsule_one_top, capsule_three_bottom, 1, -1);
+    addForce(capsule2, capsule3, capsule_two_top, capsule_three_bottom, 1, -1);
+
+    addForce(capsule, capsule5, capsule_one_top, capsule_five_top, 1, 1);
+    addForce(capsule3, capsule5, capsule_three_top, capsule_five_top, 1, 1);
+    addForce(capsule, capsule5, capsule_one_bottom, capsule_five_top, -1, 1);
+    addForce(capsule4, capsule5, capsule_four_top, capsule_five_top, 1, 1);
+
+    addForce(capsule2, capsule5, capsule_two_top, capsule_five_bottom, 1, -1);
+    addForce(capsule4, capsule5, capsule_four_top, capsule_five_bottom, 1, -1);
+    addForce(capsule2, capsule5, capsule_two_bottom, capsule_five_bottom, -1, -1);
+    addForce(capsule3, capsule5, capsule_three_top, capsule_five_bottom, 1, -1);
+
+    addForce(capsule, capsule4, capsule_one_bottom, capsule_four_top, -1, 1);
+    addForce(capsule2, capsule4, capsule_two_bottom, capsule_four_top, -1, 1);
+    addForce(capsule, capsule4, capsule_one_bottom, capsule_four_bottom, -1, -1);
+    addForce(capsule2, capsule4, capsule_two_bottom, capsule_four_bottom, -1, -1);
+
+    addForce(capsule, capsule6, capsule_one_top, capsule_six_top, 1, 1);
+    addForce(capsule, capsule6, capsule_one_bottom, capsule_six_top, -1, 1);
+    addForce(capsule2, capsule6, capsule_two_top, capsule_six_bottom, 1, -1);
+    addForce(capsule2, capsule6, capsule_two_bottom, capsule_six_bottom, -1, -1);
+
+    addForce(capsule3, capsule6, capsule_three_bottom, capsule_six_top, -1, 1);
+    addForce(capsule4, capsule6, capsule_four_bottom, capsule_six_top, -1, 1);
+    addForce(capsule4, capsule6, capsule_four_bottom, capsule_six_bottom, -1, -1);
+    addForce(capsule3, capsule6, capsule_three_bottom, capsule_six_bottom, -1, -1);
+
     // ----- DRAW -----
     // Springs
     dsDrawLine(capsule_one_top, capsule_three_top);
@@ -277,14 +297,9 @@ void simLoop (int pause) {
     dsDrawLine(capsule_two_bottom, capsule_four_bottom);
 
     dsDrawLine(capsule_one_top, capsule_six_top);
-    dsDrawLine(capsule_three_top, capsule_six_top);
     dsDrawLine(capsule_one_bottom, capsule_six_top);
-    dsDrawLine(capsule_four_top, capsule_six_top);
-
     dsDrawLine(capsule_two_top, capsule_six_bottom);
-    dsDrawLine(capsule_four_top, capsule_six_bottom);
     dsDrawLine(capsule_two_bottom, capsule_six_bottom);
-    dsDrawLine(capsule_three_top, capsule_six_bottom);
 
     dsDrawLine(capsule_three_bottom, capsule_six_top);
     dsDrawLine(capsule_four_bottom, capsule_six_top);
@@ -303,8 +318,8 @@ void simLoop (int pause) {
 // Start function void start()
 void start() {
     // Set a camera
-    static float xyz[3] = {1.5, 0, 1.5};     // View position (x, y, z [m])
-    static float hpr[3] = {180, -22.5, 0};    // View direction head, pitch, roll[]
+    static float xyz[3] = {2.0, 0, 1};     // View position (x, y, z [m])
+    static float hpr[3] = {180, 0, 0};    // View direction head, pitch, roll[]
 
     dsSetViewpoint (xyz, hpr);// Set a view point
 }
@@ -323,7 +338,7 @@ int main (int argc, char **argv) {
     dInitODE(); // Initialize ODE
     world = dWorldCreate(); // Create a dynamic world
 
-    dWorldSetGravity (world, 0, 0, 0);
+    dWorldSetGravity (world, 0, 0, -0.05);
     dWorldSetDamping (world, 0.05, 0.05);
 
     space = dHashSpaceCreate(0);
