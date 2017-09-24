@@ -38,6 +38,7 @@ dSpaceID space;
 dGeomID  ground;
 dJointGroupID contactgroup;
 int flag = 0;
+int force_step = 0;
 
 const float gravity = 0;
 
@@ -100,6 +101,15 @@ void addForce(Strut c1, Strut c2, dVector3 cp1, dVector3 cp2, int d1, int d2) {
         -vdist[1] * force / pdist,
         -vdist[2] * force / pdist,
         0, 0, d2 * c2.length/2);
+}
+
+void computeMotorForce(Strut c, int step, float *coords) {
+    float angle = (PI / 8) * step;
+    float new_x = c.radius * cos(angle);
+    float new_y = c.radius * sin(angle);
+    // float coords[2];
+    coords[0] = new_x;
+    coords[1] = new_y;
 }
 
 void drawStrut(Strut strut) {
@@ -179,43 +189,58 @@ void simLoop (int pause) {
     // dBodyAddTorque(capsule3.body, 0, 0, 0.00001);
 
     // Simulate motor vibration
-    if (flag == 0) {
-        dBodyAddForceAtRelPos(capsule.body,
-            0.0005, 0, 0,
-            0, 0, capsule.length/2);
+    // if (flag == 0) {
+    //     dBodyAddForceAtRelPos(capsule.body,
+    //         0.0005, 0, 0,
+    //         0, 0, capsule.length/2);
+    //
+    //     dBodyAddForceAtRelPos(capsule.body,
+    //         -0.0005, 0, 0,
+    //         0, 0, -capsule.length/2);
+    //
+    //     dBodyAddForceAtRelPos(capsule4.body,
+    //         0.0005, 0, 0,
+    //         0, 0, capsule4.length/2);
+    //
+    //     dBodyAddForceAtRelPos(capsule4.body,
+    //         -0.0005, 0, 0,
+    //         0, 0, -capsule4.length/2);
+    //
+    //     flag = 1;
+    // } else {
+    //     dBodyAddForceAtRelPos(capsule.body,
+    //         -0.0005, 0, 0,
+    //         0, 0, capsule.length/2);
+    //
+    //     dBodyAddForceAtRelPos(capsule.body,
+    //         0.0005, 0, 0,
+    //         0, 0, -capsule.length/2);
+    //
+    //     dBodyAddForceAtRelPos(capsule4.body,
+    //         -0.0005, 0, 0,
+    //         0, 0, capsule4.length/2);
+    //
+    //     dBodyAddForceAtRelPos(capsule4.body,
+    //         0.0005, 0, 0,
+    //         0, 0, -capsule4.length/2);
+    //
+    //     flag = 0;
+    // }
 
-        dBodyAddForceAtRelPos(capsule.body,
-            -0.0005, 0, 0,
-            0, 0, -capsule.length/2);
+    // Motor Simulation
+    ++force_step;
 
-        dBodyAddForceAtRelPos(capsule4.body,
-            0.0005, 0, 0,
-            0, 0, capsule4.length/2);
+    if (force_step > 16)
+        force_step = 0;
 
-        dBodyAddForceAtRelPos(capsule4.body,
-            -0.0005, 0, 0,
-            0, 0, -capsule4.length/2);
+    float coords[2] = {0};
+    computeMotorForce(capsule, force_step, coords);
 
-        flag = 1;
-    } else {
-        dBodyAddForceAtRelPos(capsule.body,
-            -0.0005, 0, 0,
-            0, 0, capsule.length/2);
+    // printf("%f %f\n", coords[0], coords[1]);
 
-        dBodyAddForceAtRelPos(capsule.body,
-            0.0005, 0, 0,
-            0, 0, -capsule.length/2);
-
-        dBodyAddForceAtRelPos(capsule4.body,
-            -0.0005, 0, 0,
-            0, 0, capsule4.length/2);
-
-        dBodyAddForceAtRelPos(capsule4.body,
-            0.0005, 0, 0,
-            0, 0, -capsule4.length/2);
-
-        flag = 0;
-    }
+    dBodyAddForceAtRelPos(capsule.body,
+            0.0005 * (coords[0] / capsule.radius), 0.0005 * (coords[1] / capsule.radius), 0,
+            coords[0], coords[1], 0);
 
     // ----- EDGES -----
     dVector3 capsule_one_top, capsule_one_bottom;
