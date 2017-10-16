@@ -4,10 +4,20 @@ tensegrity.cpp: 3-Strut Tensegrity Simulation.
 *** I used your favorite C/C++ braces style, John! ***
 */
 
+// #include <stdio.h>
 #include "ode/ode.h"
 #include "drawstuff/drawstuff.h"
 #include <math.h>
 #include <vector>
+#include <time.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
 
 #ifdef dDOUBLE
 #define dsDrawSphere dsDrawSphereD
@@ -39,11 +49,21 @@ dGeomID  ground;
 dJointGroupID contactgroup;
 int flag = 0;
 int force_step = 0;
+dVector3 position = {0, 0, 0};
+dVector3 init_position;
 
 const float gravity = 0;
 
 int count = 0;
 float origin[] = {0, 0, 0};
+time_t start_time;
+
+double *motor_configs;
+
+struct sockaddr_in address;
+int sock = 0, valread;
+struct sockaddr_in serv_addr;
+char buffer[1024] = {0};
 
 // OBJECTS
 struct Strut capsule, capsule2, capsule3, capsule4, capsule5, capsule6;
@@ -58,6 +78,13 @@ float getDist(dReal vect[3], dReal vect2[3]) {
     float dist = sqrt(pow(vect[0] - vect2[0], 2) +
                     pow(vect[1] - vect2[1], 2) +
                     pow(vect[2] - vect2[2], 2));
+
+    return dist;
+}
+
+float get2DDist(dVector3 vect, dVector3 vect2) {
+    float dist = sqrt(pow(vect[0] - vect2[0], 2) +
+                    pow(vect[1] - vect2[1], 2));
 
     return dist;
 }
@@ -78,6 +105,13 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
         dJointID c = dJointCreateContact (world,contactgroup,&contact);
         dJointAttach (c,b1,b2);
     }
+}
+
+float getTimeElapsed() {
+    time_t now;
+    time(&now);
+
+    return difftime(now, start_time);
 }
 
 void addForce(Strut c1, Strut c2, dVector3 cp1, dVector3 cp2, int d1, int d2) {
@@ -170,6 +204,13 @@ void simLoop (int pause) {
     dWorldStep(world, 0.05); // Step a simulation world, time step is 0.05 [s]
     dJointGroupEmpty(contactgroup);
 
+    memset(buffer, 0, sizeof(buffer));
+    valread = read(sock, buffer, 1024);
+    motor_configs = (double *)buffer;
+
+    // if (valread > 0)
+    //     printf("Message: %1f, %1f, %1f\n", *(motor_configs), *(motor_configs + 1), *(motor_configs + 2));
+
     dBodySetForce(capsule.body, 0, 0, 0);
     dBodySetForce(capsule2.body, 0, 0, 0);
     dBodySetForce(capsule3.body, 0, 0, 0);
@@ -177,57 +218,7 @@ void simLoop (int pause) {
     dBodySetForce(capsule5.body, 0, 0, 0);
     dBodySetForce(capsule6.body, 0, 0, 0);
 
-    // dBodySetTorque(capsule.body, 0, 0, 0);
-    // dBodySetTorque(capsule2.body, 0, 0, 0);
-    // dBodySetTorque(capsule3.body, 0, 0, 0);
-    // dBodySetTorque(capsule4.body, 0, 0, 0);
-    // dBodySetTorque(capsule5.body, 0, 0, 0);
-    // dBodySetTorque(capsule6.body, 0, 0, 0);
-
-    // dBodyAddTorque(capsule.body, 0, 0, 0.00002);
-    // dBodyAddTorque(capsule2.body, 0, 0, 0.00002);
-    // dBodyAddTorque(capsule3.body, 0, 0, 0.00001);
-
-    // Simulate motor vibration
-    // if (flag == 0) {
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         0.0005, 0, 0,
-    //         0, 0, capsule.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, -capsule.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule4.body,
-    //         0.0005, 0, 0,
-    //         0, 0, capsule4.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule4.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, -capsule4.length/2);
-    //
-    //     flag = 1;
-    // } else {
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, capsule.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule.body,
-    //         0.0005, 0, 0,
-    //         0, 0, -capsule.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule4.body,
-    //         -0.0005, 0, 0,
-    //         0, 0, capsule4.length/2);
-    //
-    //     dBodyAddForceAtRelPos(capsule4.body,
-    //         0.0005, 0, 0,
-    //         0, 0, -capsule4.length/2);
-    //
-    //     flag = 0;
-    // }
-
-    // Motor Simulation
+    // ----- Motor Simulation -----
     ++force_step;
 
     if (force_step > 16)
@@ -236,10 +227,10 @@ void simLoop (int pause) {
     float coords[2] = {0};
     computeMotorForce(capsule, force_step, coords);
 
-    // printf("%f %f\n", coords[0], coords[1]);
+    printf("Motor Speed: %f\n", *(motor_configs));
 
     dBodyAddForceAtRelPos(capsule.body,
-            0.0005 * (coords[0] / capsule.radius), 0.0005 * (coords[1] / capsule.radius), 0,
+            (*(motor_configs)) * 0.0005 * (coords[0] / capsule.radius), 0.0005 * (coords[1] / capsule.radius), 0,
             coords[0], coords[1], 0);
 
     // ----- EDGES -----
@@ -338,6 +329,13 @@ void simLoop (int pause) {
     drawStrut(capsule4);
     drawStrut(capsule5);
     drawStrut(capsule6);
+
+    dBodyGetRelPointPos(capsule2.body, 0, 0, capsule.length/2, position);
+    float dist = get2DDist(position, init_position);
+    float time_elapsed = getTimeElapsed();
+
+    printf("Dist: %.2f\n", dist);
+    printf("Time Elapsed: %.2f\n\n", time_elapsed);
 }
 
 // Start function void start()
@@ -402,10 +400,44 @@ int main (int argc, char **argv) {
     capsule6 = createStrut(space, world, coords6, angles5, mass, length, radius, color5);
 
     // ----------------------------------------
+    // ----- SOCKET -----
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+
+    memset(&serv_addr, '0', sizeof(serv_addr));
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
+    {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    // send(new_socket, hello, strlen(hello), 0);
+    // printf("Hello message sent\n");
+    //
+    // send(new_socket, "exit", strlen("exit"), 0);
+
+    // ----------------------------------------
+
+    dBodyGetRelPointPos(capsule2.body, 0, 0, capsule.length/2, init_position);
 
     // Simulation loop
     // argc, argv are argument of main function.
     // fn is a structure of drawstuff
+    time(&start_time);
     dsSimulationLoop(argc, argv, 1024, 800, &fn);
 
     dJointGroupDestroy (contactgroup);
