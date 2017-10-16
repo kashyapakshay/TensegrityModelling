@@ -204,9 +204,9 @@ void simLoop (int pause) {
     dWorldStep(world, 0.05); // Step a simulation world, time step is 0.05 [s]
     dJointGroupEmpty(contactgroup);
 
-    memset(buffer, 0, sizeof(buffer));
-    valread = read(sock, buffer, 1024);
-    motor_configs = (double *)buffer;
+    // memset(buffer, 0, sizeof(buffer));
+    // valread = read(sock, buffer, 1024);
+    // motor_configs = (double *)buffer;
 
     // if (valread > 0)
     //     printf("Message: %1f, %1f, %1f\n", *(motor_configs), *(motor_configs + 1), *(motor_configs + 2));
@@ -227,10 +227,10 @@ void simLoop (int pause) {
     float coords[2] = {0};
     computeMotorForce(capsule, force_step, coords);
 
-    printf("Motor Speed: %f\n", *(motor_configs));
+    // printf("Motor Speed: %f\n", *(motor_configs));
 
     dBodyAddForceAtRelPos(capsule.body,
-            (*(motor_configs)) * 0.0005 * (coords[0] / capsule.radius), 0.0005 * (coords[1] / capsule.radius), 0,
+            0.0005 * (coords[0] / capsule.radius), 0.0005 * (coords[1] / capsule.radius), 0,
             coords[0], coords[1], 0);
 
     // ----- EDGES -----
@@ -336,6 +336,9 @@ void simLoop (int pause) {
 
     printf("Dist: %.2f\n", dist);
     printf("Time Elapsed: %.2f\n\n", time_elapsed);
+    // double speed = dist / time_elapsed;
+
+    // send(sock, (void *)&speed, sizeof(speed), 0);
 }
 
 // Start function void start()
@@ -402,28 +405,28 @@ int main (int argc, char **argv) {
     // ----------------------------------------
     // ----- SOCKET -----
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("\n Socket creation error \n");
-        return -1;
-    }
-
-    memset(&serv_addr, '0', sizeof(serv_addr));
-
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
-    {
-        printf("\nInvalid address/ Address not supported \n");
-        return -1;
-    }
-
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        printf("\nConnection Failed \n");
-        return -1;
-    }
+    // if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    //     printf("\n Socket creation error \n");
+    //     return -1;
+    // }
+    //
+    // memset(&serv_addr, '0', sizeof(serv_addr));
+    //
+    // serv_addr.sin_family = AF_INET;
+    // serv_addr.sin_port = htons(PORT);
+    //
+    // // Convert IPv4 and IPv6 addresses from text to binary form
+    // if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
+    // {
+    //     printf("\nInvalid address/ Address not supported \n");
+    //     return -1;
+    // }
+    //
+    // if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    // {
+    //     printf("\nConnection Failed \n");
+    //     return -1;
+    // }
 
     // send(new_socket, hello, strlen(hello), 0);
     // printf("Hello message sent\n");
