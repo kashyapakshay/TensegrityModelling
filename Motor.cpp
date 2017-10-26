@@ -35,8 +35,10 @@ void Motor::_step_increment() {
 
 vector<double> Motor::compute_motor_force_point(Strut strut) {
     double angle = _frequency * _step;
-    double next_x = strut.radius * cos(angle);
-    double next_y = strut.radius * sin(angle);
+    double strut_radius = strut.get_radius();
+    
+    double next_x = strut_radius * cos(angle);
+    double next_y = strut_radius * sin(angle);
 
     vector<double> force_point(next_x, next_y);
 
