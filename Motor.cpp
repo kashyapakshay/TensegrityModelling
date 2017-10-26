@@ -5,16 +5,16 @@ using namespace std;
 Motor::Motor() {
     _step = 0;
     _frequency = PI / 8;
-    _limit = 2 * PI / (frequency);
+    _limit = (2 * PI) / _frequency;
 }
 
 Motor::Motor(float initial_phase, float frequency) {
     _step = initial_phase;
     _frequency = frequency;
-    _limit = 2 * PI / (frequency);
+    _limit = 2 * PI / (_frequency);
 }
 
-void Motor::set_frequency(float frequency) {
+void Motor::set_frequency(double frequency) {
     _frequency = frequency;
 }
 
@@ -33,14 +33,14 @@ void Motor::_step_increment() {
         _step_reset();
 }
 
-vector<double> Motor::compute_motor_force_point(Strut c) {
-    double angle = _frequency * step;
-    double new_x = c.radius * cos(angle);
-    double new_y = c.radius * sin(angle);
+vector<double> Motor::compute_motor_force_point(Strut strut) {
+    double angle = _frequency * _step;
+    double next_x = strut.radius * cos(angle);
+    double next_y = strut.radius * sin(angle);
 
-    vector<double> coords = {new_x, new_y};
+    vector<double> force_point(next_x, next_y);
 
     _step_increment();
 
-    return coords;
+    return force_point;
 }

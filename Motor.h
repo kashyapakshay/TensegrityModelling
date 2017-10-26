@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#define PI 3.14;
+#define PI 3.14
 
 class Motor {
     public:
@@ -11,6 +11,10 @@ class Motor {
         Motor(float initial_phase, float frequency);
 
         double get_frequency();
+        void set_frequency(double);
+        void _step_reset();
+        void _step_increment();
+        std::vector<double> compute_motor_force_point(Strut strut);
     private:
         double _frequency;
         int _step;
