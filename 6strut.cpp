@@ -51,6 +51,7 @@ int flag = 0;
 int force_step = 0;
 dVector3 position = {0, 0, 0};
 dVector3 init_position;
+double phase = PI / 8;
 
 const float gravity = 0;
 
@@ -138,7 +139,7 @@ void addForce(Strut c1, Strut c2, dVector3 cp1, dVector3 cp2, int d1, int d2) {
 }
 
 void computeMotorForce(Strut c, int step, float *coords) {
-    float angle = (PI / 8) * step;
+    float angle = phase * step;
     float new_x = c.radius * cos(angle);
     float new_y = c.radius * sin(angle);
     // float coords[2];
@@ -152,6 +153,24 @@ void drawStrut(Strut strut) {
 
     dsDrawCapsule(dBodyGetPosition(strut.body),
         dBodyGetRotation(strut.body), strut.length, strut.radius);
+}
+
+void centerOfMass(Strut *struts, int n_struts, dVector3 position) {
+    dVector3 sum = {0, 0, 0}, curr_pos;
+    Strut curr_strut;
+
+    for(int i = 0; i < n_struts; i++) {
+        curr_strut = *(struts + i);
+        dBodyGetRelPointPos(curr_strut.body, 0, 0, curr_strut.length/2, curr_pos);
+
+        sum[0] = *curr_pos;
+        sum[1] = *(curr_pos + 1);
+        sum[2] = *(curr_pos + 2);
+    }
+
+    *position = sum[0] / n_struts;
+    *(position + 1) = sum[1] / n_struts;
+    *(position + 2) = sum[2] / n_struts;
 }
 
 Strut createStrut(dSpaceID space, dWorldID world, dVector3 coords, dVector3 angles, dReal mass,
@@ -196,20 +215,14 @@ Strut createStrut(dSpaceID space, dWorldID world, dVector3 coords, dVector3 angl
     return strut;
 }
 
+bool mflag = true;
+int iteration_count = 0;
+
 // Simulation loop
 void simLoop (int pause) {
-    count++;
-
     dSpaceCollide (space, 0, &nearCallback);
     dWorldStep(world, 0.05); // Step a simulation world, time step is 0.05 [s]
     dJointGroupEmpty(contactgroup);
-
-    // memset(buffer, 0, sizeof(buffer));
-    // valread = read(sock, buffer, 1024);
-    // motor_configs = (double *)buffer;
-
-    // if (valread > 0)
-    //     printf("Message: %1f, %1f, %1f\n", *(motor_configs), *(motor_configs + 1), *(motor_configs + 2));
 
     dBodySetForce(capsule.body, 0, 0, 0);
     dBodySetForce(capsule2.body, 0, 0, 0);
@@ -217,6 +230,64 @@ void simLoop (int pause) {
     dBodySetForce(capsule4.body, 0, 0, 0);
     dBodySetForce(capsule5.body, 0, 0, 0);
     dBodySetForce(capsule6.body, 0, 0, 0);
+
+    // ----- EXP -----
+    Strut struts[6] = {capsule, capsule2, capsule3, capsule4, capsule5, capsule6};
+    centerOfMass(struts, 6, position);
+
+    // printf("POS: %f %f %f\n", *position, *(position + 1), *(position + 2));
+
+    // dBodyGetRelPointPos(capsule3.body, 0, 0, capsule3.length/2, position);
+    float dist = get2DDist(position, init_position);
+    float time_elapsed = getTimeElapsed();
+
+    memset(buffer, 0, sizeof(buffer));
+    // memset(buffer, 0, sizeof(buffer));
+    valread = read(sock, buffer, 1024);
+    if(mflag) {
+        motor_configs = (double *)buffer;
+        // phase = PI / (int)(10 * (*(motor_configs + 3) + 1));
+        phase = PI / 8;
+
+        printf("\n[Iteration: %d]\n", iteration_count);
+        printf("Motor Speeds: %f %f %f\n", *(motor_configs), *(motor_configs + 1), *(motor_configs + 2));
+        printf("Phase: %f\n", phase);
+
+        mflag = false;
+        ++iteration_count;
+    }
+
+    double speed = -1;
+
+    if(count % 500 == 0) {
+        speed = dist;
+    }
+
+    send(sock, (void *)&speed, sizeof(speed), 0);
+
+    // printf("val: %d\n", valread);
+
+    // if (valread > 0)
+    //     printf("Message: %1f, %1f, %1f\n", *(motor_configs), *(motor_configs + 1), *(motor_configs + 2));
+
+    if(count % 500 == 0) {
+        // double speed = dist / time_elapsed;
+
+        printf("Dist: %.2f\n", dist);
+        printf("Time Elapsed: %.2f\n", time_elapsed);
+        // printf("Speed: %.2f\n\n", speed);
+
+        *init_position = *position;
+        *(init_position + 1) = *(position + 1);
+        *(init_position + 2) = *(position + 2);
+
+        time(&start_time);
+        mflag = true;
+        // status = 0;
+        // send(sock, (void *)&status, sizeof(status), 0);
+    }
+
+    // send(sock, (void *)&speed, sizeof(speed), 0);
 
     // ----- Motor Simulation -----
     ++force_step;
@@ -227,10 +298,23 @@ void simLoop (int pause) {
     float coords[2] = {0};
     computeMotorForce(capsule, force_step, coords);
 
-    // printf("Motor Speed: %f\n", *(motor_configs));
-
+    double mag_force = (*(motor_configs)) * 0.0005;
     dBodyAddForceAtRelPos(capsule.body,
-            0.0005 * (coords[0] / capsule.radius), 0.0005 * (coords[1] / capsule.radius), 0,
+            mag_force * (coords[0] / capsule.radius), mag_force * (coords[1] / capsule.radius), 0,
+            coords[0], coords[1], 0);
+
+    computeMotorForce(capsule4, force_step, coords);
+
+    mag_force = (*(motor_configs + 1)) * 0.0005;
+    dBodyAddForceAtRelPos(capsule4.body,
+            mag_force * (coords[0] / capsule4.radius), mag_force * (coords[1] / capsule4.radius), 0,
+            coords[0], coords[1], 0);
+
+    computeMotorForce(capsule4, force_step, coords);
+
+    mag_force = (*(motor_configs + 2)) * 0.0005;
+    dBodyAddForceAtRelPos(capsule2.body,
+            mag_force * (coords[0] / capsule2.radius), mag_force * (coords[1] / capsule2.radius), 0,
             coords[0], coords[1], 0);
 
     // ----- EDGES -----
@@ -330,15 +414,7 @@ void simLoop (int pause) {
     drawStrut(capsule5);
     drawStrut(capsule6);
 
-    dBodyGetRelPointPos(capsule2.body, 0, 0, capsule.length/2, position);
-    float dist = get2DDist(position, init_position);
-    float time_elapsed = getTimeElapsed();
-
-    printf("Dist: %.2f\n", dist);
-    printf("Time Elapsed: %.2f\n\n", time_elapsed);
-    // double speed = dist / time_elapsed;
-
-    // send(sock, (void *)&speed, sizeof(speed), 0);
+    count++;
 }
 
 // Start function void start()
@@ -376,57 +452,57 @@ int main (int argc, char **argv) {
     dReal mass = 0.1, length = 1.0, radius = 0.02;
 
     // --- Capsule 1/2: Blue ---
-    dVector3 coords1 = {0.0, 0.2, 1.0};
-    dVector3 angles1 = {0.0, 0.0, 0.0};
+    dVector3 coords1 = {0.0, 0.2, 0.5};
+    dVector3 angles1 = {0.0, 0.1, 0.0};
     dVector3 color1 = {0.0, 0.0, 1.0};
     capsule = createStrut(space, world, coords1, angles1, mass, length, radius, color1);
 
-    dVector3 coords2 = {0.0, -0.2, 1.0};
+    dVector3 coords2 = {0.0, -0.2, 0.5};
     capsule2 = createStrut(space, world, coords2, angles1, mass, length, radius, color1);
 
     // --- Capsule 3/4: Green ---
-    dVector3 coords3 = {0.0, 0.0, 1.2};
-    dVector3 angles3 = {0.0, -PI/2, 0.0};
+    dVector3 coords3 = {0.0, 0.0, 0.7};
+    dVector3 angles3 = {0.0, -PI/2 + 0.1, 0.0};
     dVector3 color3 = {0.0, 1.0, 0.0};
     capsule3 = createStrut(space, world, coords3, angles3, mass, length, radius, color3);
 
-    dVector3 coords4 = {0.0, 0.0, 0.8};
+    dVector3 coords4 = {0.0, 0.0, 0.3};
     capsule4 = createStrut(space, world, coords4, angles3, mass, length, radius, color3);
 
     // --- Capsule 5/6: Red ---
-    dVector3 coords5 = {0.2, 0.0, 1.0};
-    dVector3 angles5 = {PI/2, 0.0, 0.0};
+    dVector3 coords5 = {0.2, 0.0, 0.5};
+    dVector3 angles5 = {PI/2, 0.1, 0.0};
     dVector3 color5 = {1.0, 0.0, 0.0};
     capsule5 = createStrut(space, world, coords5, angles5, mass, length, radius, color5);
 
-    dVector3 coords6 = {-0.2, 0.0, 1.0};
+    dVector3 coords6 = {-0.2, 0.0, 0.5};
     capsule6 = createStrut(space, world, coords6, angles5, mass, length, radius, color5);
 
     // ----------------------------------------
     // ----- SOCKET -----
 
-    // if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    //     printf("\n Socket creation error \n");
-    //     return -1;
-    // }
-    //
-    // memset(&serv_addr, '0', sizeof(serv_addr));
-    //
-    // serv_addr.sin_family = AF_INET;
-    // serv_addr.sin_port = htons(PORT);
-    //
-    // // Convert IPv4 and IPv6 addresses from text to binary form
-    // if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
-    // {
-    //     printf("\nInvalid address/ Address not supported \n");
-    //     return -1;
-    // }
-    //
-    // if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    // {
-    //     printf("\nConnection Failed \n");
-    //     return -1;
-    // }
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+
+    memset(&serv_addr, '0', sizeof(serv_addr));
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
+    {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
 
     // send(new_socket, hello, strlen(hello), 0);
     // printf("Hello message sent\n");
