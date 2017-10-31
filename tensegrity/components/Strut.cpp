@@ -41,6 +41,25 @@ Strut::Strut(d_vector coords, d_vector angles, double mass,
 double Strut::get_mass() {return _mass;}
 double Strut::get_radius() {return _radius;}
 double Strut::get_length() {return _length;}
+
+d_vector Strut::get_edge_coords(int edge_dir) {
+	// Find a better way to translate. Maybe search for a translate() method?
+	//  Also, this is wrong.
+	d_vector top_edge = {
+		_coords[0] + edge_dir * (_length / 2),
+		_coords[1] + edge_dir * (_length / 2),
+		_coords[2] + edge_dir * (_length / 2)
+	};
+
+	// d_vector top_edge;
+	// dBodyGetRelPointPos(_body, 0, 0, _length / 2, &top_edge);
+
+	return top_edge;
+}
+
+d_vector Strut::get_top_edge_coords() {return get_edge_coords(1);}
+d_vector Strut::get_bottom_edge_coords() {return get_edge_coords(-1);}
+
 d_vector Strut::get_coords() {return _coords;}
 d_vector Strut::get_color() {return _color;}
 d_vector Strut::get_angles() {return _angles;}
