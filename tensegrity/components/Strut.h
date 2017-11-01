@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 
+#include "Motor.h";
+
 typedef std::vector<double> d_vector;
 
 class Strut {
@@ -10,6 +12,8 @@ class Strut {
         Strut();
         Strut(d_vector, d_vector);
         Strut(d_vector, d_vector, double, double, double, d_vector);
+
+        static int TOP_EDGE, BOTTOM_EDGE;
 
         d_vector get_coords();
         d_vector get_angles();
@@ -28,5 +32,6 @@ class Strut {
         d_vector _angles;
         d_vector _color;
         double _length, _mass, _radius;
+        Motor *_motor;
 };
 #endif
