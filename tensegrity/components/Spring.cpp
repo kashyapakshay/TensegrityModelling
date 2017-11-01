@@ -1,8 +1,5 @@
 #include "Spring.h"
 
-int Spring::TOP_EDGE = 1;
-int Spring::BOTTOM_EDGE = 2;
-
 Spring::Spring(Strut strut_1, int edge_1, Strut strut_2, int edge_2) {
     _spring_constant = 0.001;
     _resting_length = 0.2;

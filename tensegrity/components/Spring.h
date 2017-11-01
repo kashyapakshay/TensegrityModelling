@@ -14,8 +14,6 @@ class Spring {
         Spring(Strut, int, Strut, int);
         Spring(Strut, int, Strut, int, double, double);
 
-        static int TOP_EDGE, BOTTOM_EDGE;
-
         double get_spring_constant();
         double get_resting_length();
         double compute_spring_force();
