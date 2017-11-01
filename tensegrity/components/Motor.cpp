@@ -6,6 +6,7 @@ Motor::Motor() {
     _step = 0;
     _frequency = PI / 8;
     _limit = (2 * PI) / _frequency;
+    _speed = 1.0;
 }
 
 Motor::Motor(float initial_phase, float frequency) {
@@ -14,17 +15,13 @@ Motor::Motor(float initial_phase, float frequency) {
     _limit = 2 * PI / (_frequency);
 }
 
-void Motor::set_frequency(double frequency) {
-    _frequency = frequency;
-}
+void Motor::set_speed(double speed) {_speed = speed;}
+double Motor::get_speed() {return _speed};
 
-double Motor::get_frequency() {
-    return _frequency;
-}
+void Motor::set_frequency(double frequency) {_frequency = frequency;}
+double Motor::get_frequency() {return _frequency;}
 
-void Motor::_step_reset() {
-    _step = 0;
-}
+void Motor::_step_reset() {_step = 0;}
 
 void Motor::_step_increment() {
     ++_step;
@@ -36,7 +33,7 @@ void Motor::_step_increment() {
 vector<double> Motor::compute_motor_force_point(Strut strut) {
     double angle = _frequency * _step;
     double strut_radius = strut.get_radius();
-    
+
     double next_x = strut_radius * cos(angle);
     double next_y = strut_radius * sin(angle);
 

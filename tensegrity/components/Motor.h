@@ -19,8 +19,7 @@ class Motor {
         void _step_increment();
         std::vector<double> compute_motor_force_point(Strut strut);
     private:
-        double _frequency;
-        int _step;
-        int _limit;
+        double _frequency, _speed;
+        int _step, _limit;
 };
 #endif
