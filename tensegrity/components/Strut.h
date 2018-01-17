@@ -3,8 +3,6 @@
 #include <iostream>
 #include <vector>
 
-#include "Motor.h";
-
 typedef std::vector<double> d_vector;
 
 class Strut {
@@ -32,6 +30,6 @@ class Strut {
         d_vector _angles;
         d_vector _color;
         double _length, _mass, _radius;
-        Motor *_motor;
+        // Motor *_motor;
 };
 #endif

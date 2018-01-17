@@ -13,7 +13,7 @@ Strut::Strut() {
 	_mass = 1.0;
 	_radius = 0.02;
 	_color = {0, 0, 0};
-	_motor = NULL;
+	// _motor = NULL;
 }
 
 Strut::Strut(d_vector coords, d_vector angles) {
@@ -26,7 +26,7 @@ Strut::Strut(d_vector coords, d_vector angles) {
 	_mass = 1.0;
 	_radius = 0.02;
 	_color = {0, 0, 0};
-	_motor = NULL;
+	// _motor = NULL;
 }
 
 // dSpaceID space, dWorldID world
@@ -41,7 +41,7 @@ Strut::Strut(d_vector coords, d_vector angles, double mass,
 	_mass = mass;
 	_radius = radius;
 	_color = color;
-	_motor = NULL;
+	// _motor = NULL;
 }
 
 double Strut::get_mass() {return _mass;}
@@ -70,5 +70,5 @@ d_vector Strut::get_coords() {return _coords;}
 d_vector Strut::get_color() {return _color;}
 d_vector Strut::get_angles() {return _angles;}
 
-void Strut::attach_motor(Motor *motor) {_motor = motor;}
-Motor* Strut::get_motor() {return _motor}
+// void Strut::attach_motor(Motor *motor) {_motor = motor;}
+// Motor* Strut::get_motor() {return _motor}

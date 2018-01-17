@@ -7,22 +7,27 @@ Motor::Motor() {
     _frequency = PI / 8;
     _limit = (2 * PI) / _frequency;
     _speed = 1.0;
+    _strut = NULL;
 }
 
 Motor::Motor(float initial_phase, float frequency) {
     _step = initial_phase;
     _frequency = frequency;
     _limit = 2 * PI / (_frequency);
+    _speed = 1.0;
+    _strut = NULL;
 }
 
-void Motor::set_speed(double speed) {_speed = speed;}
-double Motor::get_speed() {return _speed};
+void Motor::attach_to_strut(Strut *strut) {_strut = strut;}
 
 void Motor::set_frequency(double frequency) {_frequency = frequency;}
 double Motor::get_frequency() {return _frequency;}
 
-void Motor::_step_reset() {_step = 0;}
+void Motor::set_speed(double speed) {_speed = speed;}
+double Motor::get_speed() {return _speed;}
 
+
+void Motor::_step_reset() {_step = 0;}
 void Motor::_step_increment() {
     ++_step;
 

@@ -6,15 +6,17 @@
 
 #include "Strut.h"
 #include "Spring.h"
-
+#include ""
 typedef std::vector<double> d_vector;
 
-class Spring {
+class Tensegrity {
     public:
         Tensegrity();
 
-        void add_strut(Strut *);
-        void add_spring(Spring *);
+        void add_strut(Strut*);
+        void add_spring(Spring*);
+        void add_motor(Motor*);
+
         void move_fwd();
         void set_motor_speed(d_vector);
     private:
