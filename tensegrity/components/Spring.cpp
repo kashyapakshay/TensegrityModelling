@@ -1,6 +1,6 @@
 #include "Spring.h"
 
-Spring::Spring(Strut strut_1, int edge_1, Strut strut_2, int edge_2) {
+Spring::Spring(Strut *strut_1, int edge_1, Strut *strut_2, int edge_2) {
     _spring_constant = 0.001;
     _resting_length = 0.2;
 
@@ -11,7 +11,7 @@ Spring::Spring(Strut strut_1, int edge_1, Strut strut_2, int edge_2) {
     _edge_2 = edge_2;
 }
 
-Spring::Spring(Strut strut_1, int edge_1, Strut strut_2, int edge_2,
+Spring::Spring(Strut *strut_1, int edge_1, Strut *strut_2, int edge_2,
     double spring_constant, double resting_length) {
 
     _strut_1 = strut_1;
@@ -22,8 +22,8 @@ Spring::Spring(Strut strut_1, int edge_1, Strut strut_2, int edge_2,
 }
 
 double Spring::_compute_distance_between_strut_edges() {
-    d_vector edge_1 = _strut_1.get_edge_coords(_edge_1);
-    d_vector edge_2 = _strut_2.get_edge_coords(_edge_2);
+    d_vector edge_1 = _strut_1->get_edge_coords(_edge_1);
+    d_vector edge_2 = _strut_2->get_edge_coords(_edge_2);
 
     double dist = sqrt(pow(edge_1[0] - edge_2[0], 2) +
                     pow(edge_1[1] - edge_2[1], 2) +
@@ -33,8 +33,8 @@ double Spring::_compute_distance_between_strut_edges() {
 }
 
 d_vector Spring::_compute_distance_vector_between_strut_edges() {
-    d_vector edge_1 = _strut_1.get_edge_coords(_edge_1);
-    d_vector edge_2 = _strut_2.get_edge_coords(_edge_2);
+    d_vector edge_1 = _strut_1->get_edge_coords(_edge_1);
+    d_vector edge_2 = _strut_2->get_edge_coords(_edge_2);
 
     d_vector dist_vector = {
         edge_1[0] - edge_2[0],

@@ -70,5 +70,5 @@ d_vector Strut::get_coords() {return _coords;}
 d_vector Strut::get_color() {return _color;}
 d_vector Strut::get_angles() {return _angles;}
 
-// void Strut::attach_motor(Motor *motor) {_motor = motor;}
-// Motor* Strut::get_motor() {return _motor}
+void Strut::attach_motor(Motor *motor) {_motor = motor;}
+Motor* Strut::get_attached_motor() {return _motor;}

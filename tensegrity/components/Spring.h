@@ -11,8 +11,8 @@ typedef std::vector<double> d_vector;
 
 class Spring {
     public:
-        Spring(Strut, int, Strut, int);
-        Spring(Strut, int, Strut, int, double, double);
+        Spring(Strut*, int, Strut*, int);
+        Spring(Strut*, int, Strut*, int, double, double);
 
         double get_spring_constant();
         double get_resting_length();
@@ -20,7 +20,7 @@ class Spring {
         d_vector compute_spring_force_unit_vector();
     private:
         double _spring_constant, _resting_length;
-        Strut _strut_1, _strut_2;
+        Strut *_strut_1, *_strut_2;
         int _edge_1, _edge_2;
 
         double _compute_distance_between_strut_edges();
