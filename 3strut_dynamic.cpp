@@ -27,6 +27,7 @@ dWorldID world;
 dSpaceID space;
 dGeomID  ground;
 dJointGroupID contactgroup;
+Strut *strut_ptr;
 
 static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
     dBodyID b1 = dGeomGetBody(o1);
@@ -41,13 +42,14 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
     }
 }
 
-// void drawStrut(Strut strut) {
-//     dReal *color = strut.color;
-//     dsSetColor(color[0], color[1], color[2]);
-//
-//     dsDrawCapsule(dBodyGetPosition(strut.body),
-//         dBodyGetRotation(strut.body), strut.length, strut.radius);
-// }
+void drawStrut(Strut *strut) {
+    d_vector color = strut->get_color();
+    dsSetColor(color[0], color[1], color[2]);
+
+    // strut->draw();
+    dsDrawCapsule(dBodyGetPosition(strut->get_body()),
+        dBodyGetRotation(strut->get_body()), strut->get_length(), strut->get_radius());
+}
 
 // Simulation loop
 void simLoop (int pause) {
@@ -63,7 +65,7 @@ void simLoop (int pause) {
     // addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
     //
     // // Struts (Capsule 1 - Blue; 2 - Green; 3 - Red)
-    // drawStrut(capsule);
+    drawStrut(strut_ptr);
     // drawStrut(capsule2);
     // drawStrut(capsule3);
 }
@@ -86,7 +88,8 @@ int main (int argc, char **argv) {
     fn.step = &simLoop;               // step function
     fn.command = NULL;     // no command function for keyboard
     fn.stop    = NULL;         // no stop function
-    fn.path_to_textures = "/opt/ode-0.13/drawstuff/textures"; //path to the texture
+    // fn.path_to_textures = "/opt/ode-0.13/drawstuff/textures"; //path to the texture
+    fn.path_to_textures = "/usr/local/include/drawstuff/textures"; //path to the texture
 
     dInitODE(); // Initialize ODE
     world = dWorldCreate(); // Create a dynamic world
@@ -101,6 +104,7 @@ int main (int argc, char **argv) {
     // ----------------------------------------
 
     Strut strut(world, space);
+    strut_ptr = &strut;
 
     // ----------------------------------------
 
