@@ -11,6 +11,7 @@ tensegrity.cpp: 3-Strut Tensegrity Simulation.
 #include "drawstuff/drawstuff.h"
 
 #include "tensegrity/components/dynamic/Strut.h"
+#include "tensegrity/components/static/Spring.h"
 
 #ifdef dDOUBLE
 #define dsDrawSphere dsDrawSphereD
@@ -53,9 +54,44 @@ void drawStrut(Strut *strut) {
         dBodyGetRotation(strut->get_body()), strut->get_length(), strut->get_radius());
 }
 
-void handle_forces() {
+void drawSpring(Spring *spring) {
+	dVector3 cap_one_point, cap_two_point;
+	Strut *strut_1, *strut_2;
 
+	strut_1 = spring->get_strut_one();
+	strut_2 = spring->get_strut_two();
+
+	dBodyGetRelPointPos(strut_1->get_body(), 0, 0, strut_1->get_length() / 2, cap_one_point);
+	dBodyGetRelPointPos(strut_2->get_body(), 0, 0, strut_2->get_length() / 2, cap_two_point);
+
+	dsDrawLine(cap_one_point, cap_two_point);
 }
+
+void handle_one_force(Spring* spr_ptr) {
+	d_vector force_vec = spr_ptr->compute_spring_force_vector();
+	int dir_1 = spr_ptr->get_edge_one(), dir_2 = spr_ptr->get_edge_two();
+
+	dBodyAddForceAtRelPos(spr_ptr->get_strut_one()->get_body(),
+        dir_1 * force_vec[0],
+        dir_1 * force_vec[1],
+        dir_1 * force_vec[2],
+        0, 0, dir_1 * spr_ptr->get_strut_one()->get_length()/2);
+
+    dBodyAddForceAtRelPos(spr_ptr->get_strut_two()->get_body(),
+        dir_2 * force_vec[0],
+        dir_2 * force_vec[1],
+        dir_2 * force_vec[2],
+        0, 0, dir_2 * spr_ptr->get_strut_one()->get_length()/2);
+}
+
+// void handle_springs() {
+// 	Spring *tmp = spring_ptr;
+// 	for(int i = 0; i < 3; i++) {
+// 		// handle_one_force(tmp);
+// 		drawSpring(tmp);
+// 		tmp++;
+// 	}
+// }
 
 // Simulation loop
 void simLoop (int pause) {
@@ -68,9 +104,13 @@ void simLoop (int pause) {
     // ----- APPLY EDGE FORCES (SIMULATE SPRINGS) -----
     // addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
 
-    Strut *tmp = strut_ptr;
-    for(int i=0; i < 3; i++)
-        drawStrut(tmp++);
+    Strut *tmp_str = strut_ptr;
+    for(int i = 0; i < 3; i++)
+        drawStrut(tmp_str++);
+
+	Spring *tmp_spr = spring_ptr;
+	for(int j = 0; j < 3; j++)
+		drawSpring(tmp_spr++);
 }
 
 // Start function void start()
@@ -91,8 +131,8 @@ int main (int argc, char **argv) {
     fn.step = &simLoop;               // step function
     fn.command = NULL;     // no command function for keyboard
     fn.stop    = NULL;         // no stop function
-    // fn.path_to_textures = "/opt/ode-0.13/drawstuff/textures"; //path to the texture
-    fn.path_to_textures = "/usr/local/include/drawstuff/textures"; //path to the texture
+    fn.path_to_textures = "/opt/ode-0.13/drawstuff/textures"; //path to the texture
+    // fn.path_to_textures = "/usr/local/include/drawstuff/textures"; //path to the texture
 
     dInitODE(); // Initialize ODE
     world = dWorldCreate(); // Create a dynamic world
@@ -107,6 +147,7 @@ int main (int argc, char **argv) {
     // ----------------------------------------
 
     strut_ptr = (Strut *) malloc(3 * sizeof(Strut));
+	spring_ptr = (Spring *) malloc(3 * sizeof(Spring));
 
     // ----------------------------------------
 
@@ -115,7 +156,10 @@ int main (int argc, char **argv) {
     strut_2.set_color({0, 1.0, 0});
     strut_3.set_color({0, 0, 1.0});
 
-    Spring spring_1(&strut_1, 1, &strut_2, -1);
+    Spring
+		spring_1(&strut_1, 1, &strut_2, -1),
+		spring_2(&strut_1, 1, &strut_3, -1),
+		spring_3(&strut_2, -1, &strut_3, 1);
 
     strut_ptr = &strut_1;
     strut_ptr++;
@@ -123,6 +167,13 @@ int main (int argc, char **argv) {
     strut_ptr++;
     strut_ptr = &strut_3;
     strut_ptr = strut_ptr - 2;
+
+	spring_ptr = &spring_1;
+	spring_ptr++;
+	spring_ptr = &spring_2;
+	spring_ptr++;
+	spring_ptr = &spring_3;
+	spring_ptr = spring_ptr - 2;
 
     // ----------------------------------------
 
