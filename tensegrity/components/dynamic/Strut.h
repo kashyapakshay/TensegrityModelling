@@ -32,6 +32,8 @@ class Strut {
         d_vector get_top_edge_coords();
         d_vector get_bottom_edge_coords();
 
+        void set_color(d_vector);
+
 		void apply_edge_force(int, d_vector);
         // void draw();
 

@@ -120,6 +120,10 @@ d_vector Strut::get_edge_coords(int edge_dir) {
 d_vector Strut::get_top_edge_coords() {return get_edge_coords(1);}
 d_vector Strut::get_bottom_edge_coords() {return get_edge_coords(-1);}
 
+void Strut::set_color(d_vector color) {
+	_color = color;
+}
+
 void Strut::apply_edge_force(int edge_dir, d_vector forces) {
 	dBodyAddForceAtRelPos(
 		_body,
