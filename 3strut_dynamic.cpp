@@ -27,7 +27,9 @@ dWorldID world;
 dSpaceID space;
 dGeomID  ground;
 dJointGroupID contactgroup;
+
 Strut *strut_ptr;
+Spring *spring_ptr;
 
 static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
     dBodyID b1 = dGeomGetBody(o1);
@@ -51,6 +53,10 @@ void drawStrut(Strut *strut) {
         dBodyGetRotation(strut->get_body()), strut->get_length(), strut->get_radius());
 }
 
+void handle_forces() {
+
+}
+
 // Simulation loop
 void simLoop (int pause) {
     dSpaceCollide (space,0,&nearCallback);
@@ -58,16 +64,13 @@ void simLoop (int pause) {
     dJointGroupEmpty (contactgroup);
 
     // dBodySetForce(capsule.body, 0, 0, 0);
-    // dBodySetForce(capsule2.body, 0, 0, 0);
-    //
-    //
-    // // ----- APPLY EDGE FORCES (SIMULATE SPRINGS) -----
+
+    // ----- APPLY EDGE FORCES (SIMULATE SPRINGS) -----
     // addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
-    //
-    // // Struts (Capsule 1 - Blue; 2 - Green; 3 - Red)
-    drawStrut(strut_ptr);
-    // drawStrut(capsule2);
-    // drawStrut(capsule3);
+
+    Strut *tmp = strut_ptr;
+    for(int i=0; i < 3; i++)
+        drawStrut(tmp++);
 }
 
 // Start function void start()
@@ -103,8 +106,23 @@ int main (int argc, char **argv) {
 
     // ----------------------------------------
 
-    Strut strut(world, space);
-    strut_ptr = &strut;
+    strut_ptr = (Strut *) malloc(3 * sizeof(Strut));
+
+    // ----------------------------------------
+
+    Strut strut_1(world, space), strut_2(world, space), strut_3(world, space);
+    strut_1.set_color({1.0, 0, 0});
+    strut_2.set_color({0, 1.0, 0});
+    strut_3.set_color({0, 0, 1.0});
+
+    Spring spring_1(&strut_1, 1, &strut_2, -1);
+
+    strut_ptr = &strut_1;
+    strut_ptr++;
+    strut_ptr = &strut_2;
+    strut_ptr++;
+    strut_ptr = &strut_3;
+    strut_ptr = strut_ptr - 2;
 
     // ----------------------------------------
 
@@ -117,6 +135,8 @@ int main (int argc, char **argv) {
     dSpaceDestroy (space);
     dWorldDestroy (world);
     dCloseODE();
+
+    // free(strut_ptr);
 
     return 0;
 }
