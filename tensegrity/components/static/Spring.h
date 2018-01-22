@@ -14,10 +14,16 @@ class Spring {
         Spring(Strut*, int, Strut*, int);
         Spring(Strut*, int, Strut*, int, double, double);
 
+		int get_edge_one();
+		int get_edge_two();
+
+		Strut* get_strut_one();
+		Strut* get_strut_two();
+		
         double get_spring_constant();
         double get_resting_length();
         double compute_spring_force();
-        d_vector compute_spring_force_unit_vector();
+        d_vector compute_spring_force_vector();
     private:
         double _spring_constant, _resting_length;
         Strut *_strut_1, *_strut_2;

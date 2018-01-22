@@ -19,6 +19,9 @@ Spring::Spring(Strut *strut_1, int edge_1, Strut *strut_2, int edge_2,
 
     _spring_constant = spring_constant;
     _resting_length = resting_length;
+
+	_edge_1 = edge_1;
+    _edge_2 = edge_2;
 }
 
 double Spring::_compute_distance_between_strut_edges() {
@@ -52,17 +55,23 @@ double Spring::compute_spring_force() {
     return spring_force;
 }
 
-d_vector Spring::compute_spring_force_unit_vector() {
+d_vector Spring::compute_spring_force_vector() {
     double dist = _compute_distance_between_strut_edges();
     d_vector dist_vector = _compute_distance_vector_between_strut_edges();
 
     double spring_force = compute_spring_force();
 
-    d_vector force_unit_vector = {
+    d_vector force_vector = {
         dist_vector[0] * (spring_force / dist),
         dist_vector[1] * (spring_force / dist),
         dist_vector[2] * (spring_force / dist)
     };
 
-    return force_unit_vector;
+    return force_vector;
 }
+
+int Spring::get_edge_one() {return _edge_1;}
+int Spring::get_edge_two() {return _edge_2;}
+
+Strut* Spring::get_strut_one() {return _strut_1;}
+Strut* Spring::get_strut_two() {return _strut_2;}
