@@ -30,7 +30,8 @@ dGeomID  ground;
 dJointGroupID contactgroup;
 
 Strut *strut_ptr;
-Spring *spring_ptr;
+Spring *spring_ptr_1, *spring_ptr_2, *spring_ptr_3, *spring_ptr_4, *spring_ptr_5,
+    *spring_ptr_6, *spring_ptr_7, *spring_ptr_8, *spring_ptr_9;
 
 static void nearCallback (void *data, dGeomID o1, dGeomID o2) {
     dBodyID b1 = dGeomGetBody(o1);
@@ -69,19 +70,28 @@ void drawSpring(Spring *spring) {
 
 void handle_one_force(Spring* spr_ptr) {
 	d_vector force_vec = spr_ptr->compute_spring_force_vector();
-	int dir_1 = spr_ptr->get_edge_one(), dir_2 = spr_ptr->get_edge_two();
+    int dir_1 = spr_ptr->get_edge_one(), dir_2 = spr_ptr->get_edge_two();
+    // d_vector
+    //     edge_coords_1 = spr_ptr->get_edge_one()->get_edge_coords(dir_1),
+    //     edge_coords_2 = spr_ptr->get_edge_two()->get_edge_coords(dir_2);
+    //
+    // vdist[0] = (edge_coords_2[0] - edge_coords_1[0]);
+    // vdist[1] = (edge_coords_2[1] - edge_coords_1[1]);
+    // vdist[2] = (edge_coords_2[2] - edge_coords_1[2]);
 
 	dBodyAddForceAtRelPos(spr_ptr->get_strut_one()->get_body(),
-        dir_1 * force_vec[0],
-        dir_1 * force_vec[1],
-        dir_1 * force_vec[2],
+        force_vec[0],
+        force_vec[1],
+        force_vec[2],
         0, 0, dir_1 * spr_ptr->get_strut_one()->get_length()/2);
 
     dBodyAddForceAtRelPos(spr_ptr->get_strut_two()->get_body(),
-        dir_2 * force_vec[0],
-        dir_2 * force_vec[1],
-        dir_2 * force_vec[2],
-        0, 0, dir_2 * spr_ptr->get_strut_one()->get_length()/2);
+        -force_vec[0],
+        -force_vec[1],
+        -force_vec[2],
+        0, 0, dir_2 * spr_ptr->get_strut_two()->get_length()/2);
+
+        drawSpring(spr_ptr);
 }
 
 // void handle_springs() {
@@ -93,13 +103,21 @@ void handle_one_force(Spring* spr_ptr) {
 // 	}
 // }
 
+void zero_out_forces() {
+    Strut *tmp_str = strut_ptr;
+    for(int i = 0; i < 3; i++) {
+        dBodySetForce(tmp_str->get_body(), 0, 0, 0);
+        ++tmp_str;
+    }
+}
+
 // Simulation loop
 void simLoop (int pause) {
     dSpaceCollide (space,0,&nearCallback);
     dWorldStep(world, 0.05); // Step a simulation world, time step is 0.05 [s]
     dJointGroupEmpty (contactgroup);
 
-    // dBodySetForce(capsule.body, 0, 0, 0);
+    zero_out_forces();
 
     // ----- APPLY EDGE FORCES (SIMULATE SPRINGS) -----
     // addForce(capsule, capsule2, capsule_one_top, capsule_two_top, 1, 1);
@@ -108,9 +126,19 @@ void simLoop (int pause) {
     for(int i = 0; i < 3; i++)
         drawStrut(tmp_str++);
 
-	Spring *tmp_spr = spring_ptr;
-	for(int j = 0; j < 3; j++)
-		drawSpring(tmp_spr++);
+	// Spring *tmp_spr = spring_ptr;
+	// for(int j = 0; j < 3; j++)
+	// 	drawSpring(tmp_spr++);
+
+    handle_one_force(spring_ptr_1);
+    handle_one_force(spring_ptr_2);
+    handle_one_force(spring_ptr_3);
+    handle_one_force(spring_ptr_4);
+    handle_one_force(spring_ptr_5);
+    handle_one_force(spring_ptr_6);
+    handle_one_force(spring_ptr_7);
+    handle_one_force(spring_ptr_8);
+    handle_one_force(spring_ptr_9);
 }
 
 // Start function void start()
@@ -131,8 +159,8 @@ int main (int argc, char **argv) {
     fn.step = &simLoop;               // step function
     fn.command = NULL;     // no command function for keyboard
     fn.stop    = NULL;         // no stop function
-    fn.path_to_textures = "/opt/ode-0.13/drawstuff/textures"; //path to the texture
-    // fn.path_to_textures = "/usr/local/include/drawstuff/textures"; //path to the texture
+    // fn.path_to_textures = "/opt/ode-0.13/drawstuff/textures"; //path to the texture
+    fn.path_to_textures = "/usr/local/include/drawstuff/textures"; //path to the texture
 
     dInitODE(); // Initialize ODE
     world = dWorldCreate(); // Create a dynamic world
@@ -147,7 +175,7 @@ int main (int argc, char **argv) {
     // ----------------------------------------
 
     strut_ptr = (Strut *) malloc(3 * sizeof(Strut));
-	spring_ptr = (Spring *) malloc(3 * sizeof(Spring));
+	// spring_ptr = (Spring *) malloc(3 * sizeof(Spring));
 
     // ----------------------------------------
 
@@ -157,9 +185,15 @@ int main (int argc, char **argv) {
     strut_3.set_color({0, 0, 1.0});
 
     Spring
-		spring_1(&strut_1, 1, &strut_2, -1),
-		spring_2(&strut_1, 1, &strut_3, -1),
-		spring_3(&strut_2, -1, &strut_3, 1);
+		spring_1(&strut_1, 1, &strut_2, 1),
+		spring_2(&strut_1, 1, &strut_3, 1),
+		spring_3(&strut_2, 1, &strut_3, 1),
+        spring_4(&strut_1, -1, &strut_2, -1),
+		spring_5(&strut_1, -1, &strut_3, -1),
+		spring_6(&strut_2, -1, &strut_3, -1),
+        spring_7(&strut_1, 1, &strut_3, -1),
+        spring_8(&strut_3, 1, &strut_1, -1),
+        spring_9(&strut_2, 1, &strut_3, -1);
 
     strut_ptr = &strut_1;
     strut_ptr++;
@@ -168,12 +202,18 @@ int main (int argc, char **argv) {
     strut_ptr = &strut_3;
     strut_ptr = strut_ptr - 2;
 
-	spring_ptr = &spring_1;
-	spring_ptr++;
-	spring_ptr = &spring_2;
-	spring_ptr++;
-	spring_ptr = &spring_3;
-	spring_ptr = spring_ptr - 2;
+	spring_ptr_1 = &spring_1;
+	// spring_ptr++;
+	spring_ptr_2 = &spring_2;
+	// spring_ptr++;
+	spring_ptr_3 = &spring_3;
+	// spring_ptr = spring_ptr - 2;
+    spring_ptr_4 = &spring_4;
+    spring_ptr_5 = &spring_5;
+    spring_ptr_6 = &spring_6;
+    spring_ptr_7 = &spring_7;
+    spring_ptr_8 = &spring_8;
+    spring_ptr_9 = &spring_9;
 
     // ----------------------------------------
 
